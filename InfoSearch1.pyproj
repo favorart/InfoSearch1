@@ -22,10 +22,22 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="back.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="cluster.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="dbscan.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="InfoSearch1.py" />
+    <Compile Include="purity.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="sekitei.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
