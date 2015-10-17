@@ -1,11 +1,12 @@
 ﻿from collections import defaultdict
 import numpy as np
 import math
+import json
 import sys
 import io
 import os
 import re
-import json
+import random
 
 
 class sekitei(object):
@@ -24,63 +25,104 @@ class sekitei(object):
         >>    (c) (1, "[^/]+\.xml")
         >>    (d) (1, "people_\d+", "\.xml") - это фича  """
 
-    def __init__(self, urls):
+    def __init__(self, urls, alpha=0.1):
+        """ """
+        self.alpha = alpha
+        self.N = len(urls)
         self.urls = np.array(urls)
-        self.tags = set(["/segments", "/params"])
+        self.tags = set()
         self.tags_order = []
+        self.n_tags = -1
         self.re_digit = re.compile('\d')
-        self.n_features = -1
 
     def contains_digit(self, string):
+        """ Return  bool """
         return (self.re_digit.search(string) is not None)
 
-    def get_features_from_url(self, url):
+    def get_features_from_url(self, url, check=False, verbose=False):
         """ Get features from URL
             :type param url: str
         """
-        url = re.sub(ur'(^https?://(www.)?)|(/$)', u'', url).split('?')
-        url, params = url[0], url[1:]
+        url = re.sub(ur'(^https?://(www.)?)|(/$)', u'', url.lower())
+        myurl = re.escape(url)
+        myurl = re.sub(ur'(\\){1,2}([^.*+$|()\\^])', ur'\2', myurl).split('?') # re.sub(ur'([.*+$|()\^])', ur'\\\1', url).split('\?')
+        if (verbose): print url
+        myurl, params = myurl[0], myurl[1:]
 
-        features = defaultdict(int)
+        features = []
         # 1. The quantity of path segments
-        segments = url.split('/')[1:] # throw away the domain
-        features["/segments"] = len(segments)
+        segments = myurl.split('/')[1:] # throw away the domain
+        if (verbose): print segments, params
+
+        j = (len(segments) - 1)
+        feat = ur'^[^/]+' + (ur'(/[^/]+){' + str(j) + ur'}' if j else ur'') + ur'$'
+        if (verbose): print feat
+        features.append(feat)
 
         # 2. The list of query parametes' names
         if (params):
             params = params[0].split('&')
-            features["/params"] = len(params)
-                                    
-            # 3. The pair 'name=value' of query parameter's
-            self.tags.update(params)
-            features .update({ p:1 for p in params })
-        else: features["/params"] = 0
+            
+            j = (len(params) - 1)
+            feat = ur'^[^?&]+[?][^?&]+' + (ur'(&[^?&]+){' + str(j) + ur'}' if j else ur'') + ur'$'
+            if (verbose): print feat
+            features.append(feat)
 
+            if (verbose): print
+            for i,par in enumerate(params):
+                # position
+                # feat = ur'^[^?&]+[?]' + ur'[^?&]+&' * i + par + ur'&[^?&]+' * (len(params) - i - 1) + ur'.*$'
+                feat = ur'^[^?&]+[?](.*&)?' + par + ur'(&.*)?$'
+                if (verbose): print feat
+                features.append(feat)
+        else:
+            feat = ur'^[^?&]+$'
+            if (verbose): print feat
+            features.append(feat)
+
+        if (verbose): print
         # 4. (a) exact string segment
-        for i,s in enumerate(segments):
-            self.tags.add((i,s))
-            features[(i,s)] = 1
+        for i,seg in enumerate(segments):
+            feat = ur'^' + (ur'([^/]+/){' + str(i) + ur'}' if i else ur'') + seg + ur'.*$'
+            if (verbose): print feat
+            features.append(feat)
 
+        if (verbose): print
         # 4. (b) string accurate within digits
-        num_iseg = {(i, re.sub(ur'[0-9]+', u'[0-9]+', seg)) : 1  for i,seg in enumerate(segments) if self.contains_digit(seg) }
-        if (num_iseg):
-            self.tags.update(num_iseg.keys())
-            features .update(num_iseg)
+        for i,seg in enumerate(segments):
+            if self.contains_digit(seg):
+                feat = ur'^' + (ur'([^/]+/){' + str(i) + ur'}' if i else ur'') + re.sub(ur'[0-9]+', ur'[0-9]+', seg) + ur'.*$'
+                if (verbose): print feat
+                features.append(feat)
 
+        if (verbose): print '\n', segments[-1]
         # 4. (c) .extension
-        match = re.search(ur'.*(\..+)$', segments[-1])
-        if match is not None:
-            ext_segment = ( len(segments)-1, ur'[^/]+' + match.group(1) )  # ???
-            self.tags.update(  [ext_segment] )
-            features .update({ ext_segment : 1 })
+        match_ext = re.search(ur'.*(\\\.[a-z]+)$', segments[-1])
+        if match_ext is not None:
+            feat = ur'^[^?&]+' + match_ext.group(1) + ur'([?].+)?$'
+            if (verbose): print feat
+            features.append(feat)
 
+        if (verbose): print
         # 4. (d) combination of (b)-(c) points
-        if self.contains_digit(segments[-1]) and match is not None:
-            feat = ( len(segments)-1, re.sub(ur'[0-9]+', u'[0-9]+', segments[-1]), ur'[^/]+'+match.group(1) )  # ???
-            self.tags.update(  [feat]  )
-            features .update({ feat : 1 })
+        url_ = '/'.join(segments)
+        if self.contains_digit(url_) and match_ext is not None:
+            segs = re.sub(ur'[0-9]+', u'[0-9]+', re.sub(ur'[^/0-9]+', ur'[^/]+', url_.split('\\.')[0] ))
+            j = (len(segments) - 1)
+            feat = ur'^' + segs + match_ext.group(1) + ur'.*$'
+            if (verbose): print feat
+            features.append(feat)
 
-        return features
+        if (check):
+            # THE CHECK
+            url = url.split('/',1)[1] # throw away the domain
+            print '\n', url
+            for feat in features:
+                if re.search(feat, url) is None:
+                    print 'ERROR:', feat
+
+        self.tags.update(features)
+        return set(features)
 
     def fit(self):
         """ Get features matrix X """
@@ -88,53 +130,60 @@ class sekitei(object):
         for url in self.urls:
             all_features.append( self.get_features_from_url(url) )
 
-        self.X = np.zeros( (len(self.urls), len(self.tags)) )
+        self.X = np.zeros( (len(self.urls), len(self.tags)), dtype=int)
         self.tags_order = np.array(list(self.tags))
 
         for i in range(len(self.urls)):            
             for j,tag in enumerate(self.tags_order):
-                self.X[i][j] = all_features[i][tag]
+                self.X[i][j] = 1 if (tag in all_features[i]) else 0
 
-    def most_freq_features(self, n_features):
-        """ """
-        self.tags_order = self.tags_order.reshape( (len(self.tags), 1) )
-        self.X = np.concatenate( (self.X.T, self.tags_order), axis=1)
+    def most_freq_features(self):
+        """ Resurm sum-matrix X """
+        # self.tags_order = self.tags_order.reshape( (len(self.tags), 1) )
+        # self.X = np.concatenate( (self.X.T, self.tags_order), axis=1 )
+        Y = [ (x, tag) for x,tag in zip(self.X.T, self.tags_order) ]
+        Y = sorted(Y, key=lambda y: sum(y[0]), reverse=True)
+        self.X, self.tags_order = np.array([ [ x for x in y[0] ] for y in Y ]).T, [ y[-1] for y in Y ]
+        self.n_features = len([ x for x in self.X.sum(axis=0) if x >= (self.alpha * self.N) ])
+        return self.X[0::, :self.n_features:]
 
-        self.X = np.array(sorted(self.X, key=lambda entry: len([ x for x in entry if type(x) is float and x != 0. ]), reverse=True))
-        
-        self.tags_order = self.X[-1]
-        self.X = self.X[:-1]
-        self.X = self.X.T
-
-        self.n_features = n_features
-         
-        return self.X[0::, 0:self.n_features:]
-
-    def make_P(self, urls):
-        n = self.n_features if self.n_features > 0 else len(self.tags_order)
-        P = np.zeros( (len(urls), n) )
+    def matrix_of_existing_features(self, new_urls):
+        """ Return binary matrix X for new urls """
+        n = self.n_features if (self.n_features > 0) else len(self.tags_order)
+        X = np.zeros( (len(new_urls), n) )
 
         for j,tag in enumerate(self.tags_order[:n]):
-            for i,url in enumerate(urls):
-                url = re.sub(ur'(^https?://(www.)?)|(/$)', u'', url).split('?')
-                url, params = url[0], url[1:] # split params
-                segments = url.split('/')[1:] # throw off domains
+            for i,url in enumerate(new_urls):
+                # Throw away the domain and protocol from url
+                url = re.sub(ur'(^https?://(www.)?)|(/$)', u'', url).split('/', 1)[1]
+                X[i][j] = 1 if (re.search(tag, url) is not None) else 0
+        return X
 
-                if type(tag) == tuple:
-                    if   len(tag) == 2 and re.search(tag[1], segments[tag[0]]):
-                        P[i][j] == 1
-                    elif len(tag) == 3 and re.search(tag[1], segments[tag[0]]) \
-                                       and re.search(tag[2], segments[tag[0]]):
-                        P[i][j] = 1
-                elif type(tag) == str:
-                    if '/segments':
-                        P[i][j] = len(segments)
-                    else: # '/params'
-                        params = params[0].split('&')
-                        P[i][j] = len(params)
-        return P
-
-    def get_regexp(self, cluster):
+    def get_regexp(self, X, y):
         """ :type param cluster: matrix """
+        classes = list(set(y))
+        print classes, '\n\n'
+
+        # X = np.array(X)
+
+        np.set_printoptions(precision=2)
+        feat_all_freq = X.sum(axis=0)
+        
+        indeces = [ [ i for i,res in enumerate(y) if res == c ] for c in classes ]
+        feat_cls_freq = np.array([ X[i].sum(axis=0) for i in indeces ])
+
+        with open('feat.txt', 'w') as f:
+            print >>f, feat_all_freq, '\n'
+            print >>f, feat_cls_freq, '\n'
+        
+            for c,fii in zip(classes, feat_cls_freq):
+                print>>f,  c, '=', fii / feat_all_freq
+                # for i in xrange(len(classes)):
+                # print c, '=', ' '.join(sorted([ str((i,"%.2f" % n)) for i,n in enumerate(f / feat_all_freq) if n > 0. ], reverse=True, key=lambda x: x[1]))
+                print c, '=', ' '.join([ str(i) for i,n in enumerate(fii / feat_all_freq) if n > 0. ])
+            print >>f,  '\n\n'
+        # random.shuffle(indeces[0])
+        # print X[indeces[-1]], '\n\n', X[indeces[0][:15]]
+
         regexp = ''
         return regexp
