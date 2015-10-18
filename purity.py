@@ -1,9 +1,23 @@
-from sklearn.metrics import normalized_mutual_info_score  # """ ???????????????? ???????? ?????????? """
-from sklearn.metrics import f1_score                      # """ F-???? """ ???
-# from sklearn.metrics import b
+﻿from sklearn.metrics import normalized_mutual_info_score
+from sklearn.metrics import f1_score
+
+from dbscan import dbscan
+from sklearn.cluster.dbscan_ import DBSCAN
+
+from collections import defaultdict
+import numpy as np
+import math
+import json
+import sys
+import io
+import os
+import re
+import random
+
+from sekitei import sekitei
 
 
-class purity(object):
+class estimate(object):
     """ Calculate the metrics of a quality
         of the clusterization for a site
     """
@@ -14,15 +28,47 @@ class purity(object):
         self.n_bootstreping = n_bootstreping
         self.tags = set()
 
-    def calc(self, clusters, classes):
-        result = 0.
+    def purity(self, good_urls, urls, n_urls, verbose=False):
+        estimation = 0.
+
+        y = [1] * n_urls + [0] * n_urls
         for i in xrange(self.n_bootstreping):
-            result += [ max(len(clr in cls)) for clr,cls in clusters, clusses ]
-            result *= 1. / len(clusters)
-        return  1. / n_bootstreping * result
+            random.shuffle(good_urls)
+            random.shuffle(urls)
 
+            fit_urls = good_urls[:n_urls] + urls[:n_urls]            
+            mysekitei = sekitei(fit_urls, alpha=0.01)
+            mysekitei.fit()
+            
+            X = mysekitei.most_freq_features()
+            # print  mysekitei.n_features, '\n'
+            # print '\n'.join(mysekitei.tags_order[:mysekitei.n_features]), '\n\n'
+            # P = mysekitei.matrix_of_existing_features(predict_urls)
 
-    def urls_quantity(self, k, N, a):        
-        N_fact = math.factorial(N)
-        return sum( map( lambda i: math.pow(a,i) * math.pow(1-a, N-i) * N_fact / (math.factorial(i) * math.factorial(N-i)), range(k) ))
+            dbs = DBSCAN(eps=1.2)
+            py = dbs.fit_predict(X)
+
+            clusters = list(set(py))
+            if verbose: print 'clusters=', len(clusters)
+            classes = [ 0, 1 ]
+
+            count0 = [0] * len(clusters)
+            count1 = [0] * len(clusters)
+
+            for i,c in enumerate(clusters):
+                for j,p in enumerate(py):
+                    if p == c:
+                       if    j <  n_urls: count0[i] += 1
+                       elif  j >= n_urls: count1[i] += 1
+                       else: raise ValueError
+
+            estimation += float(max(count0) + max(count1)) / (2 * n_urls)
+            if verbose: 
+                print count0
+                print count1
+                print 'estimation=', estimation, max(count0), max(count1)
+                print ''            
+            
+        return  estimation / self.n_bootstreping
+
 

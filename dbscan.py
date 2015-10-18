@@ -1,9 +1,9 @@
-from scipy.spatial import distance
+﻿from scipy.spatial import distance
 
 
 class dbscan(object):
     """ DBScan Clustering Algorithm """
-    def __init__(self, min_pts, epsilon):
+    def __init__(self, epsilon=0.5, min_pts=5):
         self.min_pts = min_pts
         self.epsilon = epsilon
     
@@ -18,16 +18,15 @@ class dbscan(object):
     
     def merge(self, nbr, nbr1):
         """ Merging elements of nbr1 list to nbr list """
-        for elem in nbr1:
-            if elem not in nbr:
-                nbr.append(elem)
+        nbr += [ elem for elem in nbr1 if elem not in nbr ]
     
-    def expand_cluster(self, pt, nbr, C, NV_list):
+    def expand_cluster(self, pt, nbr, C, NV_list, verbose=False):
         """ Add given point pt to cluster C and all its neighbours - nbr """
         C.append(pt)
-        print 'Expanding cluster'
+
+        if verbose: print 'Expanding cluster'
         for point in nbr:
-            print '.',
+            if verbose: print '.',
             
             if point in NV_list:
                 NV_list.remove(point)
@@ -40,9 +39,9 @@ class dbscan(object):
                 if point in cluster:
                     break
             else: C.append(point)                
-        print '\nCurrent NV_list size:', len(NV_list)    
+        if verbose: print '\nCurrent NV_list size:', len(NV_list)    
     
-    def fit(self, X, y=None):
+    def fit(self, X, y=None, verbose=False):
         """ Use data matrix X to compute model parameters """
         self.x_len = len(X)
         
@@ -50,7 +49,7 @@ class dbscan(object):
         NV = X[:] # NV - Not Visited
         NV_list = NV.tolist()
         
-        print '\nCurrent NV_list size:', len(NV_list)
+        if verbose: print '\nCurrent NV_list size:', len(NV_list)
         for point in NV_list:
             NV_list.remove(point)
             nbr = self.find_neighbours(point, NV_list)
@@ -59,12 +58,12 @@ class dbscan(object):
                 pass # TODO: To mark this point as a noise
             else:
                 C = [] # The current cluster
-                self.expand_cluster(point, nbr, C, NV_list)
+                self.expand_cluster(point, nbr, C, NV_list, verbose)
                 self.clusters.append(C)
         return self
     
     def predict(self, X):
-        """ Using computed model parameters predict cluster for all objects from x """
+        """ Predict clusters for all objects from X """
         res = []
         for point in X.tolist():
             in_cluster = False
@@ -74,6 +73,10 @@ class dbscan(object):
                     in_cluster = True
             
             if not in_cluster:
-                res.append(-1) # Value -1 is a noise
+                # Value -1 is a noise
+                res.append(-1) 
         return res
+
+    def fit_predict(self, X):
+        return self.fit(X).predict(X)
 

@@ -163,27 +163,15 @@ class sekitei(object):
         """ :type param cluster: matrix """
         classes = list(set(y))
         print classes, '\n\n'
-
-        # X = np.array(X)
-
-        np.set_printoptions(precision=2)
-        feat_all_freq = X.sum(axis=0)
         
+        feat_all_freq = np.array(X.sum(axis=0), dtype=float)
         indeces = [ [ i for i,res in enumerate(y) if res == c ] for c in classes ]
-        feat_cls_freq = np.array([ X[i].sum(axis=0) for i in indeces ])
+        feat_cls_freq = np.array([ X[i].sum(axis=0) for i in indeces ], dtype=float)
 
-        with open('feat.txt', 'w') as f:
-            print >>f, feat_all_freq, '\n'
-            print >>f, feat_cls_freq, '\n'
-        
-            for c,fii in zip(classes, feat_cls_freq):
-                print>>f,  c, '=', fii / feat_all_freq
-                # for i in xrange(len(classes)):
-                # print c, '=', ' '.join(sorted([ str((i,"%.2f" % n)) for i,n in enumerate(f / feat_all_freq) if n > 0. ], reverse=True, key=lambda x: x[1]))
-                print c, '=', ' '.join([ str(i) for i,n in enumerate(fii / feat_all_freq) if n > 0. ])
-            print >>f,  '\n\n'
-        # random.shuffle(indeces[0])
-        # print X[indeces[-1]], '\n\n', X[indeces[0][:15]]
-
-        regexp = ''
-        return regexp
+        print feat_all_freq, '\n'
+        print [ feat / feat_all_freq for feat in feat_cls_freq], '\n'
+            
+        regexpes = {}
+        for c,feat in zip(classes, feat_cls_freq):
+            regexpes[c] = [ self.tags_order[i] for i,n in enumerate(feat / feat_all_freq) if n > 0. ]
+        return regexpes
