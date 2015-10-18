@@ -21,13 +21,14 @@ class estimate(object):
     """ Calculate the metrics of a quality
         of the clusterization for a site
     """
-    """ The estimation is the clearence of a cluster
-        with bootstrepping (averaging by random selections)
-    """
+
     def __init__(self, n_bootstreping):
         self.n_bootstreping = n_bootstreping
         self.tags = set()
 
+    """ The estimation is the clearence of a cluster
+        with bootstrepping (averaging by random selections)
+    """
     def purity(self, good_urls, urls, n_urls, verbose=False):
         estimation = 0.
 
@@ -39,11 +40,7 @@ class estimate(object):
             fit_urls = good_urls[:n_urls] + urls[:n_urls]            
             mysekitei = sekitei(fit_urls, alpha=0.01)
             mysekitei.fit()
-            
             X = mysekitei.most_freq_features()
-            # print  mysekitei.n_features, '\n'
-            # print '\n'.join(mysekitei.tags_order[:mysekitei.n_features]), '\n\n'
-            # P = mysekitei.matrix_of_existing_features(predict_urls)
 
             dbs = DBSCAN(eps=1.2)
             py = dbs.fit_predict(X)

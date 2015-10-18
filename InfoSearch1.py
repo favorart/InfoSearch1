@@ -19,6 +19,7 @@ from som import som_create, som_save
 
 # np.set_printoptions(threshold=np.nan, precision=2)
 
+
 def get_clusters(good_urls, urls, n_urls=500):
     random.shuffle(good_urls)
     random.shuffle(urls)
@@ -43,6 +44,8 @@ def get_clusters(good_urls, urls, n_urls=500):
 
     # dbs1 = dbscan(epsilon=1.2)
     # py = dbs1.fit_predict(P)
+
+    # vizualize_clusters(X,y,py)
 
     clusters = list(set(py))
     with open('data/clusters_fill.txt', 'w') as f:
@@ -132,4 +135,3 @@ if __name__ == "__main__":
     
     if sys.argv[1] == '-c':
         get_clusters(good_urls, urls, 100)
-

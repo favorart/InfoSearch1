@@ -10,7 +10,7 @@ import random
 
 
 class sekitei(object):
-    """ Description of agorithm:
+    """ Description of the agorithm:
 
         >> Разберём пример иллюстрирующий работу алгоритма секетеи.
         >> http://kinopoisk.ru/afisha/people_2725199.xml?myafisha=45&ok=True

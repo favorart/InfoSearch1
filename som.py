@@ -32,7 +32,8 @@ def som_save(P, py, full_urls, mysekitei, filename='som/Title'):
 def som_create(good_urls, urls):
     full_urls = good_urls + urls
     
-    mysekitei = sekitei(full_urls, alpha=0.01)
+    fit_urls = good_urls + urls[:len(good_urls)]
+    mysekitei = sekitei(fit_urls, alpha=0.01)
     mysekitei.fit()
 
     X = mysekitei.most_freq_features()
@@ -41,8 +42,9 @@ def som_create(good_urls, urls):
     P = mysekitei.matrix_of_existing_features(full_urls)
     dbs = DBSCAN(eps=1.2)
 
+    y = [1] * len(good_urls) + [0] * len(good_urls)
     dbs.fit(X,y)
     py = dbs.fit_predict(P)
-
+    
     y = [1] * len(good_urls) + [0] * len(urls)
     som_save(P, y, full_urls, mysekitei)
