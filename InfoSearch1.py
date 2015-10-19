@@ -14,7 +14,7 @@ from sklearn.cluster.dbscan_ import DBSCAN
 from dbscan import dbscan
 
 from sekitei import sekitei
-from purity import estimate
+from purity import purity
 from som import som_create, som_save
 
 # np.set_printoptions(threshold=np.nan, precision=2)
@@ -33,16 +33,16 @@ def get_clusters(good_urls, urls, n_urls=500):
 
     X = mysekitei.most_freq_features()
     print  mysekitei.n_features, '\n'
-    print '\n'.join(mysekitei.tags_order[:mysekitei.n_features]), '\n\n'
+    # print '\n'.join(mysekitei.tags_order[:mysekitei.n_features]), '\n\n'
     
     P = mysekitei.matrix_of_existing_features(predict_urls)
 
-    dbs = DBSCAN(eps=1.2)
+    dbs = DBSCAN() # (eps=1.2)
     y = [1] * n_urls + [0] * n_urls
     dbs.fit(X,y)
     py = dbs.fit_predict(P)
 
-    # dbs1 = dbscan(epsilon=1.2)
+    # dbs1 = dbscan() # (epsilon=1.2)
     # py = dbs1.fit_predict(P)
 
     # vizualize_clusters(X,y,py)
@@ -57,12 +57,12 @@ def get_clusters(good_urls, urls, n_urls=500):
         for c in clusters:
             hist.append(len([p for p in py if p == c]))
             print c, ':', hist[-1]
-            print >>f, c, ':', hist[-1]
+            # print >>f, c, ':', hist[-1]
 
     regexpes = mysekitei.get_regexp(X,py)
 
-    for k,v in regexpes.items():
-        print k, len(v) # regexpes
+    # for k,v in regexpes.items():
+    #     print k, len(v) # regexpes
 
     with open('data/clusters_selected_features.txt', 'w') as f:
         for k,v in regexpes.items():       
@@ -124,8 +124,7 @@ if __name__ == "__main__":
     urls      = [ re.sub(ur'\r?\n', u'', url.lower()) for url in urls ]
 
     if sys.argv[1] == '-p':
-        myestimate = estimate(15)
-        res = myestimate.purity(good_urls, urls, 500, verbose=True)
+        res = purity(good_urls, urls, 500, 25, verbose=True)
         print res
         with open('data/purity.txt', 'w') as out:
             out.write(str(res) + '\n')
@@ -134,4 +133,4 @@ if __name__ == "__main__":
         som_create(good_urls, urls)
     
     if sys.argv[1] == '-c':
-        get_clusters(good_urls, urls, 100)
+        get_clusters(good_urls, urls) # , 100)

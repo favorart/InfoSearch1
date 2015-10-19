@@ -15,6 +15,7 @@ from dbscan import dbscan
 
 from sekitei import sekitei
 
+
 def som_save(P, py, full_urls, mysekitei, filename='som/Title'):
     
     with open(filename + '.vec', 'w') as vec:
@@ -40,7 +41,7 @@ def som_create(good_urls, urls):
     print  mysekitei.n_features, '\n'
 
     P = mysekitei.matrix_of_existing_features(full_urls)
-    dbs = DBSCAN(eps=1.2)
+    dbs = DBSCAN()
 
     y = [1] * len(good_urls) + [0] * len(good_urls)
     dbs.fit(X,y)

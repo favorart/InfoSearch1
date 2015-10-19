@@ -160,18 +160,20 @@ class sekitei(object):
         return X
 
     def get_regexp(self, X, y):
-        """ :type param cluster: matrix """
+        """ Return cluster regexpes dictionary """
         classes = list(set(y))
-        print classes, '\n\n'
         
         feat_all_freq = np.array(X.sum(axis=0), dtype=float)
         indeces = [ [ i for i,res in enumerate(y) if res == c ] for c in classes ]
         feat_cls_freq = np.array([ X[i].sum(axis=0) for i in indeces ], dtype=float)
 
-        print feat_all_freq, '\n'
-        print [ feat / feat_all_freq for feat in feat_cls_freq], '\n'
+        # print classes, '\n\n'
+        # print feat_all_freq, '\n'
+        # print [ feat / feat_all_freq for feat in feat_cls_freq ], '\n'
             
         regexpes = {}
         for c,feat in zip(classes, feat_cls_freq):
             regexpes[c] = [ self.tags_order[i] for i,n in enumerate(feat / feat_all_freq) if n > 0. ]
         return regexpes
+
+
