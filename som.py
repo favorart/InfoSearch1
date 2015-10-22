@@ -1,23 +1,13 @@
 ﻿import numpy as np
-import random
-import math
 import sys
-import io
-import os
-import re
 
-from matplotlib import pyplot
-import matplotlib as plt
-
-from sklearn.manifold import TSNE
 from sklearn.cluster.dbscan_ import DBSCAN
 from dbscan import dbscan
-
 from sekitei import sekitei
 
 
 def som_save(P, py, full_urls, mysekitei, filename='som/Title'):
-    
+    """ """
     with open(filename + '.vec', 'w') as vec:
         print >>vec, '$XDIM %d\n$YDIM 1\n$VEC_DIM %d' % (len(P), mysekitei.n_features)
         print >>vec, '\n'.join([ ' '.join([str(e) for e in p]) + ' ' + url for (p,url) in zip(P, full_urls) ])
@@ -30,7 +20,8 @@ def som_save(P, py, full_urls, mysekitei, filename='som/Title'):
         print >>tv, '\n'.join([ str(i) + ' ' + feat for i,feat in enumerate(mysekitei.tags_order[:mysekitei.n_features]) ])
 
 
-def som_create(good_urls, urls):
+def som_create_and_save(good_urls, urls, som_classes_else_clusters=True):
+    """ """
     full_urls = good_urls + urls
     
     fit_urls = good_urls + urls[:len(good_urls)]
@@ -41,11 +32,13 @@ def som_create(good_urls, urls):
     print  mysekitei.n_features, '\n'
 
     P = mysekitei.matrix_of_existing_features(full_urls)
-    dbs = DBSCAN()
-
-    y = [1] * len(good_urls) + [0] * len(good_urls)
-    dbs.fit(X,y)
-    py = dbs.fit_predict(P)
+    
+    py = DBSCAN().fit_predict(X)
+    regexpes = mysekitei.get_clusters_regexpes(X, py)
+    distrib  = mysekitei.distribute_among_clusters(P, regexpes)
     
     y = [1] * len(good_urls) + [0] * len(urls)
-    som_save(P, y, full_urls, mysekitei)
+    som_save(P, y if som_classes_else_clusters else distrib, full_urls, mysekitei)
+
+    print 'som done'
+    return

@@ -1,12 +1,10 @@
 ﻿from collections import defaultdict
 import numpy as np
+import random
 import math
 import json
 import sys
-import io
-import os
 import re
-import random
 
 
 class sekitei(object):
@@ -143,7 +141,7 @@ class sekitei(object):
         # self.X = np.concatenate( (self.X.T, self.tags_order), axis=1 )
         Y = [ (x, tag) for x,tag in zip(self.X.T, self.tags_order) ]
         Y = sorted(Y, key=lambda y: sum(y[0]), reverse=True)
-        self.X, self.tags_order = np.array([ [ x for x in y[0] ] for y in Y ]).T, [ y[-1] for y in Y ]
+        self.X, self.tags_order = np.array([ [ x for x in y[0] ] for y in Y ]).T, np.array([ y[-1] for y in Y ])
         self.n_features = len([ x for x in self.X.sum(axis=0) if x >= (self.alpha * self.N) ])
         return self.X[0::, :self.n_features:]
 
@@ -156,11 +154,11 @@ class sekitei(object):
             for i,url in enumerate(new_urls):
                 # Throw away the domain and protocol from url
                 url = re.sub(ur'(^https?://(www.)?)|(/$)', u'', url).split('/', 1)[1]
-                X[i][j] = 1 if (re.search(tag, url) is not None) else 0
+                X[i][j] = 1 if (re.match(tag, url) is not None) else 0
         return X
 
-    def get_regexp(self, X, y):
-        """ Return cluster regexpes dictionary """
+    def get_clusters_regexpes(self, X, y):
+        """ Return cluster regexpes list=[(class, freq_features, their_indeces)] """
         classes = list(set(y))
         
         feat_all_freq = np.array(X.sum(axis=0), dtype=float)
@@ -171,9 +169,27 @@ class sekitei(object):
         # print feat_all_freq, '\n'
         # print [ feat / feat_all_freq for feat in feat_cls_freq ], '\n'
             
-        regexpes = {}
+        regexpes = []
         for c,feat in zip(classes, feat_cls_freq):
-            regexpes[c] = [ self.tags_order[i] for i,n in enumerate(feat / feat_all_freq) if n > 0. ]
-        return regexpes
+            indeces = np.array([ i for i,f in enumerate(feat / feat_all_freq) if f > 0. ])
+            regexpes.append( (c, self.tags_order[indeces], indeces) )
+        return sorted(regexpes, key=lambda x: len(x[1]))
 
+    def distribute_among_clusters(self, P, regexpes):
+        """ Return clusters' distribution of new urls,
+            using the values of choosen features.
+        """
+        # clusters = defaultdict(list)
+        py = []
+        for p in P:
+            for c,rexps,indeces in regexpes[:-1]:
+                if all(p[indeces]) and not any(p[~indeces]):
+                    py.append(c)
+                    # clusters[c].append(p)
+                    break
+            else:
+                # only without break-s
+                py.append(-1)
+                # clusters[-1].append(p)
+        return py # clusters
 

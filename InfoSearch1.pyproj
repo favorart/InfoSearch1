@@ -13,7 +13,7 @@
     <Name>InfoSearch1</Name>
     <RootNamespace>InfoSearch1</RootNamespace>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>-c</CommandLineArguments>
+    <CommandLineArguments>-p</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -39,6 +39,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="sekitei.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="vizualize.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
