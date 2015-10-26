@@ -102,5 +102,5 @@ if __name__ == "__main__":
             print >>file, res      
     else:
         mysekitei, regexpes = get_clusters(good_urls, urls)
-        # som_create_and_save(mysekitei, regexpes, good_urls, urls)
+        som_create_and_save(mysekitei, regexpes, good_urls, urls)
 
