@@ -41,5 +41,5 @@ def vizualize_clusters(X, y, py, hist=None):
         # pyplot.show()
         pyplot.savefig('clusters' + '_hist.png')
 
-    print 'plot done'
+    # print 'plot done'
 

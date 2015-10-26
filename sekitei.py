@@ -30,7 +30,7 @@ class sekitei(object):
         self.urls = np.array(urls)
         self.tags = set()
         self.tags_order = []
-        self.n_tags = -1
+        self.n_features = -1
         self.re_digit = re.compile('\d')
 
     def contains_digit(self, string):
@@ -164,10 +164,6 @@ class sekitei(object):
         feat_all_freq = np.array(X.sum(axis=0), dtype=float)
         indeces = [ [ i for i,res in enumerate(y) if res == c ] for c in classes ]
         feat_cls_freq = np.array([ X[i].sum(axis=0) for i in indeces ], dtype=float)
-
-        # print classes, '\n\n'
-        # print feat_all_freq, '\n'
-        # print [ feat / feat_all_freq for feat in feat_cls_freq ], '\n'
             
         regexpes = []
         for c,feat in zip(classes, feat_cls_freq):
@@ -179,17 +175,16 @@ class sekitei(object):
         """ Return clusters' distribution of new urls,
             using the values of choosen features.
         """
-        # clusters = defaultdict(list)
         py = []
+
+        all_indices = range(self.n_features)
         for p in P:
-            for c,rexps,indeces in regexpes[:-1]:
-                if all(p[indeces]) and not any(p[~indeces]):
+            for c,rexps,indices in regexpes[:-1]:
+                n_indices = np.setdiff1d(all_indices, indices)
+                
+                if all(p[indices]) and not any(p[n_indices]):
                     py.append(c)
-                    # clusters[c].append(p)
                     break
-            else:
-                # only without break-s
-                py.append(-1)
-                # clusters[-1].append(p)
-        return py # clusters
+            else: py.append(-1) # only without break-s                
+        return py
 

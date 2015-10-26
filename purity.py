@@ -15,35 +15,33 @@ import random
 from sekitei import sekitei
 
 
+def purity(mysekitei, regexpes, good_urls, urls, n_urls=500,
+           n_bootstreping=25, verbose=False):
 
-""" Calculate the metrics of a quality
-    of the clusterization for a site
+    """ Calculate the metrics of a quality
+        of the clusterization for a site
 
-    The estimation is the clearence of a cluster
-    with bootstrepping (averaging by random selections)
-"""
-def purity(good_urls, urls, n_urls, n_bootstreping=15, verbose=False):
+        The estimation is the clearence of a cluster
+        with bootstrepping (averaging by random selections)
+    """
+
     estimation = 0.
+    
+    classes = [ 0, 1 ]
+    clusters = [ v[0] for v in regexpes ]
+    clusters.sort()
+    if verbose: print 'clusters= %d\n' % len(clusters)
 
     y = [1] * n_urls + [0] * n_urls
-    for i in xrange(n_bootstreping):
+    for step in xrange(n_bootstreping):
         random.shuffle(good_urls)
         random.shuffle(urls)
+
         fit_urls = good_urls[:n_urls] + urls[:n_urls] 
         new_urls = good_urls[n_urls:2*n_urls] + urls[n_urls:2*n_urls]
-             
-        mysekitei = sekitei(fit_urls, alpha=0.01)
-        mysekitei.fit()
-        X = mysekitei.most_freq_features()
+        
         P = mysekitei.matrix_of_existing_features(new_urls)
-
-        py = DBSCAN().fit_predict(X)
-        regexpes = mysekitei.get_clusters_regexpes(X, py)
         distrib  = mysekitei.distribute_among_clusters(P, regexpes)
-
-        classes = [ 0, 1 ]
-        clusters = list(set(py))
-        if verbose: print '%d  clusters= %d' % (i, len(clusters))
 
         count0 = [0.] * len(clusters)
         count1 = [0.] * len(clusters)
@@ -56,8 +54,39 @@ def purity(good_urls, urls, n_urls, n_bootstreping=15, verbose=False):
                     else:  raise ValueError
 
         estimation += sum([ max(c0, c1) for c0,c1 in zip(count0, count1) ]) / (2 * n_urls)
-        if verbose: print 'estimation= %f\n' % estimation
+        if verbose: print '%d  estimation= %f' % (step, estimation)
             
     return  estimation / n_bootstreping
 
 
+def read_clusters(clusters_filename):
+    """ mysekitei, regexpes=[(class, freq_features, their_indices)] """
+    mysekitei = sekitei([], alpha=0.01)
+
+    regexpes = []
+
+    c, n = 0, 0
+    res, indices = [], []
+    with open(clusters_filename, 'r') as file:
+        for line in file.readlines():
+            if (line[0:3] == '---'):
+                ls = line[3:].split()
+                c, n = int(ls[0]), int(ls[2])
+            elif (n):
+                r, i = line.split()
+                i = int(i)
+                mysekitei.tags.add(r)
+                mysekitei.tags_order[i] = r
+                res.append(r)
+                indices.append(i)
+                n -= 1
+
+                if not n:
+                    regexpes.append([c, res, indices])
+                    res, indices = [], []
+
+            elif len(line) and line.split() and line.split()[0] == 'n_features=':
+                mysekitei.n_features = int(line.split()[1])
+                mysekitei.tags_order = [''] * mysekitei.n_features
+
+    return mysekitei, regexpes
