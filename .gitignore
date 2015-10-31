@@ -198,3 +198,11 @@ FakesAssemblies/
 *.pyc
 *.rar
 *.png
+*.vec
+*.cls
+*.tv
+*.examined
+*.general
+Title.cls
+Title.tv
+Title.vec

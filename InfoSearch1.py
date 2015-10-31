@@ -77,11 +77,10 @@ if __name__ == "__main__":
         os.makedirs('data')
 
     if len(sys.argv) > 2:
-        file_exm = sys.argv[1]
-        file_gen = sys.argv[2]
+        file_exm = sys.argv[2]
+        file_gen = sys.argv[1]
     else:
-        file_exm = 'urls.kinopoisk.examined.txt'
-        file_gen = 'urls.kinopoisk.general.txt'
+        raise ValueError
         
     with open(file_exm, 'r') as f:
         good_urls = f.readlines()

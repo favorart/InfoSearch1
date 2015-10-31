@@ -13,7 +13,7 @@
     <Name>InfoSearch1</Name>
     <RootNamespace>InfoSearch1</RootNamespace>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>urls.kinopoisk.examined.txt urls.kinopoisk.general.txt data/clusters_freq_features.txt</CommandLineArguments>
+    <CommandLineArguments>urls.kinopoisk.general   urls.kinopoisk.examined &gt;clusters.txt</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -28,13 +28,14 @@
     <Compile Include="back.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="InfoSearch1.py" />
     <Compile Include="som.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="dbscan.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="InfoSearch1.py" />
+    <Compile Include="InfoSearch1_last.py" />
     <Compile Include="purity.py">
       <SubType>Code</SubType>
     </Compile>
