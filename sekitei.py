@@ -173,7 +173,7 @@ class sekitei(object):
 
     def distribute_among_clusters(self, P, regexpes):
         """ Return clusters' distribution of new urls,
-            using the values of choosen features.
+            using the values of chosen features.
         """
         py = []
 
